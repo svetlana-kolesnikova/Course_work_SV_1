@@ -7,12 +7,11 @@ import pandas as pd
 from dateutil.relativedelta import relativedelta
 
 from config import PATH_TO_DATA, PATH_TO_EXCEL
-from main import filename, sample_date
 
 transactions_ = pd.read_excel(PATH_TO_EXCEL)
 
 
-def save_report(filename: str = None):
+def save_report():
     """
     Декоратор для записи отчёта в файл.
     Если имя файла не передано, декоратор создаст файл с
@@ -23,11 +22,14 @@ def save_report(filename: str = None):
         @functools.wraps(func)  # декоратор для сохранения метаинформации оригинальной функции
         def wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
+            filename = input('Введите имя файла в формате "имя.формат" (txt/csv/json)\n'
+                             '(оставьте пустым — имя будет сгенерировано автоматически):\n').strip()
+            if not filename:
             # Имя файла по умолчанию, если не передано
-            output_file = filename or f'report_{func.__name__}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt'
-            with open(PATH_TO_DATA / output_file, "w", encoding="utf-8") as f:
+                filename = f'report_{func.__name__}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt'
+            with open(PATH_TO_DATA / filename, "w", encoding="utf-8") as f:
                 f.write(result)
-            print(f"[INFO] Отчёт сохранён в файл: {output_file}")
+            print(f"[INFO] Отчёт сохранён в файл: {filename}")
             return result
 
         return wrapper
@@ -35,7 +37,7 @@ def save_report(filename: str = None):
     return decorator
 
 
-@save_report(filename if filename.strip() else None)
+@save_report()
 def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) -> pd.DataFrame:
     """
     Функция выводит средние траты в рабочий и в выходной день за последние три месяца (от переданной даты)
@@ -48,7 +50,7 @@ def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) 
     if date is None:
         end_date = datetime.now()
     else:
-        end_date = datetime.strptime(sample_date, "%Y-%m-%d %H:%M:%S")
+        end_date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
 
     three_months_ago = end_date - relativedelta(months=3)  # получаем дату три месяца назад
 
@@ -80,7 +82,7 @@ def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) 
     )
 
 
-if __name__ == "__main__":
-    print(transactions_.head())
-    print(sample_date)
-    print(spending_by_workday(transactions_, sample_date))
+# if __name__ == "__main__":
+#     print(transactions_.head())
+#     print(sample_date)
+#     print(spending_by_workday(transactions_, sample_date))
