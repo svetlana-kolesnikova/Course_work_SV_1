@@ -2,14 +2,20 @@
 import functools
 from datetime import datetime
 from typing import Optional
-
+import logging
 import pandas as pd
 from dateutil.relativedelta import relativedelta
+import json
 
-from config import PATH_TO_DATA, PATH_TO_EXCEL
+from config import PATH_TO_DATA, PATH_TO_EXCEL, PATH_TO_LOGS
 
 transactions_ = pd.read_excel(PATH_TO_EXCEL)
-
+logger = logging.getLogger("save_reports")
+logger.setLevel(logging.INFO)
+file_handler = logging.FileHandler(PATH_TO_LOGS / "save_reports.log")
+file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(message)s")
+file_handler.setFormatter(file_formatter)
+logger.addHandler(file_handler)
 
 def save_report():
     """
@@ -21,15 +27,26 @@ def save_report():
     def decorator(func):
         @functools.wraps(func)  # декоратор для сохранения метаинформации оригинальной функции
         def wrapper(*args, **kwargs):
+            logger.info("Вызов функции %s", func.__name__)
             result = func(*args, **kwargs)
-            filename = input('Введите имя файла в формате "имя.формат" (txt/csv/json)\n'
+            filename = input('Введите имя файла в формате "имя.json"\n'
                              '(оставьте пустым — имя будет сгенерировано автоматически):\n').strip()
             if not filename:
             # Имя файла по умолчанию, если не передано
-                filename = f'report_{func.__name__}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt'
-            with open(PATH_TO_DATA / filename, "w", encoding="utf-8") as f:
-                f.write(result)
-            print(f"[INFO] Отчёт сохранён в файл: {filename}")
+                filename = f'report_{func.__name__}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+            file_path = PATH_TO_DATA / filename
+            
+            try:
+                with open(file_path, "w", encoding="utf-8") as file:
+                    if filename.lower().endswith(".json"):
+                        json.dump(result, file, indent=4, ensure_ascii=False)
+                        logger.info("Отчёт сохранён в JSON-файл: %s", filename)
+                    else:
+                        file.write(str(result))
+                        logger.info("Отчёт сохранён в текстовый файл: %s", filename)
+            except Exception as e:
+                logger.error("Ошибка при сохранении файла %s: %s", filename, e)
+                # print(f"[ERROR] Не удалось сохранить файл: {e}")
             return result
 
         return wrapper
@@ -76,10 +93,10 @@ def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) 
     ]
 
     average_workday_transact = round(abs(workday_transactions["Сумма операции"].mean()), 2)
-    return (
-        f"Средние траты в выходной день - {average_weekend_transact} руб.\n"
-        f"Средние траты в рабочий день - {average_workday_transact} руб.\n"
-    )
+    return {
+        "Средние траты в выходной день": f"{average_weekend_transact} руб.",
+        "Средние траты в рабочий день": f"{average_workday_transact} руб."
+    }
 
 
 # if __name__ == "__main__":
