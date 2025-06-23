@@ -61,7 +61,7 @@ def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) 
     Если дата не передана, то берется текущая дата
     """
     # преобразование полученных данных столбца в dataframe
-    transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"], dayfirst=True)
+    transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"])
 
     # проверяем задана ли дата
     if date is None:
