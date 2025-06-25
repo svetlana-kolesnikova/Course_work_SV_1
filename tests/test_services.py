@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 import pytest
 
@@ -41,7 +42,8 @@ from src.services import transactions_with_phone_numbers
         ),
     ],
 )
-def test_transactions_with_phone_numbers(input_data, expected_count):
+def test_transactions_with_phone_numbers(input_data, expected_count) -> Any:
+    """Тестирование успешного выполнения функции"""
     result = transactions_with_phone_numbers(input_data)
     # Преобразуем JSON-строку обратно в список
     result_list = json.loads(result)

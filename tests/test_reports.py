@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 import pytest
 import pandas as pd
@@ -26,7 +27,10 @@ def sample_transactions():
 # Заглушаем input и open
 @patch("builtins.input", return_value="test_report.json")
 @patch("builtins.open", new_callable=mock_open)
-def test_spending_by_workday(mock_file, mock_input, sample_transactions):
+def test_spending_by_workday(mock_file, mock_input, sample_transactions) -> Any:
+    """
+    Проверка корректной работы функции
+    """
     date = "2025-06-16 00:00:00"  # день после всех операций
     result = spending_by_workday(sample_transactions, "2025-06-16 00:00:00")
 
@@ -51,8 +55,10 @@ def test_spending_by_workday(mock_file, mock_input, sample_transactions):
 @patch("builtins.input", return_value="bad_report.json")
 @patch("builtins.open", side_effect=IOError("permission denied"))
 @patch("src.reports.logger")  # замените путь к логгеру
-def test_spending_by_workday_file_error(mock_logger, mock_open, mock_input, sample_transactions):
-    """Обрабатываем исключение при сохранении файла"""
+def test_spending_by_workday_file_error(mock_logger, mock_open, mock_input, sample_transactions) -> Any:
+    """
+    Обрабатываем исключение при сохранении файла
+    """
     result = spending_by_workday(sample_transactions, "2025-06-16 00:00:00")
     # Проверим, что в лог записана ошибка
     mock_logger.error.assert_called_once()
@@ -61,8 +67,10 @@ def test_spending_by_workday_file_error(mock_logger, mock_open, mock_input, samp
 
 @patch("builtins.input", return_value="report.json")
 @patch("builtins.open", new_callable=mock_open)
-def test_spending_by_workday_no_date(mock_file, mock_input, sample_transactions):
-    """дата по умолчанию (None)"""
+def test_spending_by_workday_no_date(mock_file, mock_input, sample_transactions) -> Any:
+    """
+    Дата по умолчанию (None)
+    """
     result = spending_by_workday(sample_transactions)  # date=None по умолчанию
     assert isinstance(result, dict)
     handle = mock_file()
@@ -73,8 +81,10 @@ def test_spending_by_workday_no_date(mock_file, mock_input, sample_transactions)
 @patch("builtins.input", return_value="")  # пустой ввод
 @patch("builtins.open", new_callable=mock_open)
 @patch("src.reports.datetime")  # ← замени путь
-def test_spending_by_workday_auto_filename(mock_datetime, mock_file, mock_input, sample_transactions):
-    """имя не задано → генерируется автоматически"""
+def test_spending_by_workday_auto_filename(mock_datetime, mock_file, mock_input, sample_transactions) -> Any:
+    """
+    Имя не задано → генерируется автоматически
+    """
     mock_datetime.now.return_value = datetime(2025, 6, 25, 14, 0, 0)
     mock_datetime.strptime = datetime.strptime
     mock_datetime.strftime = datetime.strftime
@@ -88,7 +98,10 @@ def test_spending_by_workday_auto_filename(mock_datetime, mock_file, mock_input,
 
 @patch("builtins.input", return_value="report.txt")
 @patch("builtins.open", new_callable=mock_open)
-def test_spending_by_workday_text_output(mock_file, mock_input, sample_transactions):
+def test_spending_by_workday_text_output(mock_file, mock_input, sample_transactions) -> Any:
+    """
+    Проверка записи данных
+    """
     result = spending_by_workday(sample_transactions, "2025-06-16 00:00:00")
     handle = mock_file()
     written = ''.join(call.args[0] for call in handle.write.call_args_list)
