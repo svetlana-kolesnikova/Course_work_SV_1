@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from src.services import transactions_with_phone_numbers
@@ -41,5 +43,8 @@ from src.services import transactions_with_phone_numbers
 )
 def test_transactions_with_phone_numbers(input_data, expected_count):
     result = transactions_with_phone_numbers(input_data)
-    assert isinstance(result, list)
-    assert len(result) == expected_count
+    # Преобразуем JSON-строку обратно в список
+    result_list = json.loads(result)
+    
+    assert isinstance(result_list, list)
+    assert len(result_list) == expected_count

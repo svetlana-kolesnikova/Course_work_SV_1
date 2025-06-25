@@ -1,21 +1,24 @@
 # Траты в рабочий/выходной день
 import functools
+import json
+import logging
 from datetime import datetime
 from typing import Optional
-import logging
+
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-import json
 
 from config import PATH_TO_DATA, PATH_TO_EXCEL, PATH_TO_LOGS
 
 transactions_ = pd.read_excel(PATH_TO_EXCEL)
-logger = logging.getLogger("save_reports")
+
+logger = logging.getLogger("save_reports_spending_by_workday")
 logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler(PATH_TO_LOGS / "save_reports.log")
+file_handler = logging.FileHandler(PATH_TO_LOGS / "save_reports_spending_by_workday.log")
 file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(message)s")
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
+
 
 def save_report():
     """
@@ -29,13 +32,16 @@ def save_report():
         def wrapper(*args, **kwargs):
             logger.info("Вызов функции %s", func.__name__)
             result = func(*args, **kwargs)
-            filename = input('Введите имя файла в формате "имя.json"\n'
-                             '(оставьте пустым — имя будет сгенерировано автоматически):\n').strip()
+            filename = input(
+                'Введите имя файла в формате "имя.json"\n'
+                "(оставьте пустым — имя будет сгенерировано автоматически):\n"
+            ).strip()
             if not filename:
-            # Имя файла по умолчанию, если не передано
+
+                # Имя файла по умолчанию, если не передано
                 filename = f'report_{func.__name__}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
             file_path = PATH_TO_DATA / filename
-            
+
             try:
                 with open(file_path, "w", encoding="utf-8") as file:
                     if filename.lower().endswith(".json"):
@@ -61,7 +67,7 @@ def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) 
     Если дата не передана, то берется текущая дата
     """
     # преобразование полученных данных столбца в dataframe
-    transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"])
+    transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"], dayfirst=True)
 
     # проверяем задана ли дата
     if date is None:
@@ -83,19 +89,29 @@ def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) 
     filter_operations["Тип дня"] = filter_operations["День недели"].apply(lambda x: "Рабочий" if x < 5 else "Выходной")
 
     weekend_transactions = filter_operations[
-        (filter_operations["Тип дня"] == "Выходной") & (filter_operations["Сумма операции"] < 0)
+        (filter_operations["Тип дня"] == "Выходной")
+        & (filter_operations["Сумма операции"] < 0)
+        & (filter_operations["Статус"] == "OK")
     ]
 
     average_weekend_transact = round(abs(weekend_transactions["Сумма операции"].mean()), 2)
 
     workday_transactions = filter_operations[
-        (filter_operations["Тип дня"] == "Рабочий") & (filter_operations["Сумма операции"] < 0)
+        (filter_operations["Тип дня"] == "Рабочий")
+        & (filter_operations["Сумма операции"] < 0)
+        & (filter_operations["Статус"] == "OK")
     ]
 
     average_workday_transact = round(abs(workday_transactions["Сумма операции"].mean()), 2)
+    print(
+        {
+            "Средние траты в выходной день": f"{average_weekend_transact} руб.",
+            "Средние траты в рабочий день": f"{average_workday_transact} руб.",
+        }
+    )
     return {
         "Средние траты в выходной день": f"{average_weekend_transact} руб.",
-        "Средние траты в рабочий день": f"{average_workday_transact} руб."
+        "Средние траты в рабочий день": f"{average_workday_transact} руб.",
     }
 
 
