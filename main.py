@@ -10,7 +10,20 @@ from src.reports import spending_by_workday
 
 
 # sample_date = "2019-05-15 12:00:00"
-main_page = main_page()
+print("Для фильтрации транзакций введите дату в формате 'YYYY-MM-DD HH:MM:SS':\n")
+
+while True:
+    user_input = input()
+    if is_valid_date(user_input):
+        """
+        Программа проверяет корректность введённого формата даты
+        """
+        user_date = user_input
+        break
+    else:
+        print("Неверный формат даты. Попробуйте снова.\n")
+
+main_page = main_page(user_date)
 print("Вывести отчёт о транзакциями, содержащими в описании мобильные номера? Да/Нет\n")
 while True:
     user_input1 = input().strip().lower()
@@ -29,17 +42,6 @@ print("Вывести отчёт о средних тратах за рабоч�
 while True:
     user_input2 = input().strip().lower()
     if "да" in user_input2:
-        print("Для фильтрации транзакций введите дату окончания периода в формате 'YYYY-MM-DD HH:MM:SS':\n")
-        while True:
-            user_input3 = input()
-            if is_valid_date(user_input3):
-                """
-                Программа проверяет корректность введённого формата даты
-                """
-                user_date = user_input3
-                break
-            else:
-                print("Неверный формат даты. Попробуйте снова.\n")
         transactions_ = pd.read_excel(PATH_TO_EXCEL)
         spending_by_workday(transactions_, user_date)
         sys.exit()
